@@ -1,8 +1,8 @@
 import { Component } from 'react'
 import { View, Text } from '@tarojs/components'
-import './index.scss'
+import './home.scss'
 
-export default class Index extends Component {
+export default class Home extends Component {
 
   componentWillMount () { }
 

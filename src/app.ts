@@ -1,5 +1,7 @@
 import { Component } from 'react'
 import './app.scss'
+// eslint-disable-next-line import/first
+// import 'taro-ui/dist/style/index.scss'
 
 class App extends Component {
 

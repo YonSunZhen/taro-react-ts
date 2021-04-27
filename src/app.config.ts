@@ -1,8 +1,9 @@
 export default {
   pages: [
+    'pages/echart/echart',
     'pages/login/login',
     'pages/home/home',
-    
+
   ],
   window: {
     backgroundTextStyle: 'light',

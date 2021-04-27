@@ -10,7 +10,7 @@ interface HomeState {
 }
 
 export default class Home extends Component<{}, HomeState> {
-  
+
   constructor(props) {
     super(props);
     this.state = {
@@ -22,7 +22,7 @@ export default class Home extends Component<{}, HomeState> {
   componentWillUnmount () { }
 
   // taro生命周期 对应原生onShow
-  componentDidShow () { 
+  componentDidShow () {
   }
 
   // taro生命周期 对应原生onHide
@@ -38,7 +38,7 @@ export default class Home extends Component<{}, HomeState> {
     const tabList = [{ title: 'Me' }, { title: 'My Team' }, { title: 'My Projects' }, { title: 'My Prides'}]
     return (
       <View>
-        <Header></Header> 
+        <Header></Header>
         <View>
           <AtTabs current={this.state.currentTabIdx} tabList={tabList} onClick={this.handleClick.bind(this)}>
             <AtTabsPane current={this.state.currentTabIdx} index={0} >

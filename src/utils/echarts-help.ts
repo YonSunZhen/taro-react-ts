@@ -1,115 +1,82 @@
 import { EChartOption, EChartsSeriesType } from 'echarts';
 
 // 重写对象中的每一个子项的类型
-type Color<T> = {
-  [k in keyof T]: IEChartsColor
+type IChartItems<T> = {
+  [k in keyof T]: IChartItemInfo
 };
-
-export interface IEChartsColor {
-  tips: string;
-  color: string;
-  selected: boolean;
+export interface IChartItemInfo {
+  label: string;
+  color?: string;
+  selected?: boolean;
 }
 
-export interface IEChartsParams<T = object> {
-  title?: string;
-  type?: EChartsSeriesType;
-  dataset?: IEChartsItem<T>[];
-  color?: Color<T>;
+export interface IChartParams<T> {
+  title: string;
+  type: EChartsSeriesType;
+  dataset: IChartDataset<T>[];
+  itemsConf: IChartItems<T>;
 }
 
-export interface IEChartsItem<T = object> {
+export interface IChartDataset<T> {
   xAxisName?: string;
   detail: T;
 }
 
+interface IFormattedData {
+  xAxis?: string[];
+  itemsArr: IFormattedItemsInfo[]
+}
+
+interface IFormattedItemsInfo {
+  name?: string;
+  color?: string;
+  label?: string;
+  selected?: boolean;
+}
+
 // tslint:disable: forin
-export class EChartsHelp<T = object> {
+export class ChartHelp<T> {
 
   private _title: string;
   private _type: EChartsSeriesType;
-  private _color: Color<T>;
-  constructor(params: IEChartsParams<T>) {
-    this._title = params.title as string;
-    this._type = params.type as EChartsSeriesType;
-    this._color = params.color as Color<T>;
+  private _itemsConf: IChartItems<T>;
+  private _dataset: IChartDataset<T>[];
+  private _formattedData: IFormattedData;
+  constructor(params: IChartParams<T>) {
+    this._title = params.title;
+    this._type = params.type;
+    this._itemsConf = params.itemsConf;
+    this._dataset = params.dataset;
+    this._formattedData = this._formatData(this._itemsConf, this._dataset);
   }
 
-  genConf(params: IEChartsParams<T>): EChartOption {
+  private _genCommonConf() {
     const conf: EChartOption = {};
-    const _title = this._title ? this._title : params.title ? params.title : '';
-    const _color: Color<T> = this._color ? this._color : params.color as Color<T>;
-    const _dataset = params.dataset;
-    const _colorData = this._formatColorData(_color);
-
+    const _title = this._title;
     conf.title = {text: _title, left: 'center'};
-
     conf.animation = false;
-
-    conf.color = _colorData.color;
-
-    conf.xAxis = this._genXAxis();
-
-    conf.yAxis = this._genYAxis();
-
-    conf.dataset = this._genDataSet(_dataset, _color);
-
-    conf.series = this._genSeries(_colorData.tips);
-
-    // 右上角工具按钮
-    // conf.toolbox = this._genToolBox();
-
-    // 右上角类型提示
-    // conf.legend = { orient: 'vertical', type: 'scroll', right: '0', top: 50 };
-
-    // conf.grid = {
-    //   right: '14%',
-    //   bottom: 50
-    // };
-
-    // conf.tooltip = {
-    //   trigger: 'axis',
-    //   formatter: (_params: any[]) => {
-    //     let result = _params[0].name + '<br/>';
-    //     _params.forEach(item => {
-    //       const _str = item.dimensionNames[item.seriesIndex + 1];
-    //       result += `${item.marker}${item.seriesName}:  ${(item.value === '') ? '无数据' : `${item.value[_str]}`} </br>`;
-    //     });
-    //     return result;
-    //   }
-    // };
-    // 设置右上角显示隐藏按钮
-    // conf.legend = {
-    //   selected: _colorData.selected,
-    //   type: 'scroll',
-    //   right: 0,
-    //   top: 50,
-    //   orient: 'vertical',
-    // };
-
     return conf;
   }
 
-  private _formatColorData(color: Color<T>) {
-    if (!color) {
-      return {};
-    }
-    const _colorArr: string[] = [];
-    const _tipsArr: string[] = [];
-    const _selected = {} as any;
-    for (const k in color) {
-      const _kColor = color[k].color;
-      const _kTips = color[k].tips;
-      _colorArr.push(_kColor);
-      _tipsArr.push(_kTips);
-      _selected[color[k].tips] = color[k].selected;
-    }
+  genLineOrBarConf(params?: IChartParams<T>) {
+    const _otherConf: EChartOption = {};
+    const _commonConf = this._genCommonConf();
+    _otherConf.color = this._formattedData.itemsArr.map(m => m.color as string);
+    _otherConf.xAxis = this._genXAxis();
+    _otherConf.yAxis = this._genYAxis();
+    _otherConf.series = this._genLineOrBarSeries(this._dataset);
+    _otherConf.legend = this._genLegend({top: 30});
+    const conf = Object.assign({}, _commonConf, _otherConf);
+    return conf;
+  }
 
-    return {
-      color: _colorArr,
-      tips: _tipsArr,
-      selected: _selected
-    };
+  genPieConf(params?: IChartParams<T>) {
+    const _otherConf: EChartOption = {};
+    const _commonConf = this._genCommonConf();
+    _otherConf.series = this._genPieSeries(this._dataset);
+    _otherConf.legend = this._genLegend({top: 20});
+    const conf = Object.assign({}, _commonConf, _otherConf);
+    return conf;
   }
 
   // 生成x轴相关配置
@@ -117,14 +84,10 @@ export class EChartsHelp<T = object> {
     const xAxisArr: EChartOption.XAxis[] = [];
     const _objXAxis: EChartOption.XAxis = {
       type: 'category',
-      // axisLabel: {
-      //   rotate: params.xAxisData.length >= 10 ? -30 : 0,
-      //   interval: 0,
-      // },
+      data: this._formattedData.xAxis,
       axisPointer: { type: 'shadow' },
       axisTick: {
-        // x轴标注居中显示
-        alignWithLabel: true
+        alignWithLabel: true, // x轴标注居中显示
       }
     };
     xAxisArr.push(_objXAxis);
@@ -145,55 +108,81 @@ export class EChartsHelp<T = object> {
     return yAxisArr;
   }
 
-  private _genSeries(tips?: string[]) {
-    const _seriesArr: EChartOption.Series[]  = [];
-    if (tips) {
-      tips.forEach(t => {
-        const _objSeries: EChartOption.SeriesLine = {};
-        _objSeries.type = this._type;
-        _objSeries.name = t;
-        _objSeries.label = {
-          // show: true, // 设置显示label
-        };
-        _seriesArr.push(_objSeries);
+
+  private _genLineOrBarSeries(dataset: IChartDataset<T>[]) {
+    let _seriesArr: EChartOption.Series[]  = [];
+    const _itemsArr = this._formattedData.itemsArr;
+    _itemsArr.forEach((_item) => {
+      const _objSeries: EChartOption.SeriesLine = {};
+      _objSeries.type = this._type;
+      _objSeries.name = _item.name;
+      _objSeries.label = {
+        // show: true, // 设置显示label
+      };
+      _objSeries.data = [];
+      dataset.forEach(_dataset => {
+        _objSeries.data?.push(_dataset.detail[_item.name as string]);
       });
-    }
+      _seriesArr.push(_objSeries);
+    });
     return _seriesArr;
   }
 
-  private _genDataSet(data?: IEChartsItem<T>[], color?: Color<T>) {
-    const _dataset: EChartOption.Dataset = {};
-    const _dimensions: string[] = [];
-    let _source: any[] = [];
-    if (data) {
-      const _first = data[0];
-      for (const _f in _first) {
-        _dimensions.push(_f);
-        break;
-      }
-      for (const _f in color) {
-        _dimensions.push(_f);
-      }
-
-      _source = data.map(d => {
-        const _temp = Object.assign({}, {[_dimensions[0]]: d.xAxisName}, d.detail);
-        return _temp;
-      });
-    }
-    _dataset.dimensions = _dimensions;
-    _dataset.source = _source;
-    return _dataset;
-  }
-
-  private _genToolBox() {
-    const _toolbox = {
-      feature: {
-        magicType: { show: true, type: ['line', 'bar'] },
-        restore: { show: true },
-        saveAsImage: { show: true }
-      }
+  private _genPieSeries(dataset: IChartDataset<T>[]) {
+    let _seriesArr: EChartOption.Series[]  = [];
+    const _objSeries: EChartOption.SeriesLine = {};
+    const _itemsArr = this._formattedData.itemsArr;
+    _objSeries.type = this._type;
+    _objSeries.label = {
+      // show: true, // 设置显示label
     };
-    return _toolbox;
+    _objSeries.data = [];
+    const _dimensionVal = dataset[0].detail;
+    _itemsArr.forEach((_item) => {
+      const item: any = {
+        value: _dimensionVal[_item.name as string] || 0,
+        name: _item.name
+      }
+      _objSeries.data?.push(item);
+    });
+    _seriesArr.push(_objSeries);
+    return _seriesArr;
   }
+
+  private _formatData(itemsConf: IChartItems<T>, dataset: IChartDataset<T>[]): IFormattedData {
+    const xAxis: string[] = [];
+    const itemsArr: IFormattedItemsInfo[] = [];
+    for(const key in itemsConf) {
+      const _item: IFormattedItemsInfo = {
+        name: key,
+        color: itemsConf[key].color,
+        label: itemsConf[key].label,
+        selected: itemsConf[key].selected
+      }
+      itemsArr.push(_item);
+    }
+    dataset.forEach((dataItem) => {
+      xAxis.push(dataItem.xAxisName as string);
+    })
+    return {
+      itemsArr,xAxis
+    }
+  }
+
+  private _genLegend({top = 0}) {
+    const legend: EChartOption.Legend = {
+      top: top,
+      orient: 'horizontal',
+      selected: {}
+    };
+    const _itemsArr = this._formattedData.itemsArr;
+    const _selectedObj = {};
+    _itemsArr.forEach((_item) => {
+      _selectedObj[_item.label as string] = _item.selected;
+    })
+    legend.selected = _selectedObj;
+    return legend;
+  }
+
 
 }

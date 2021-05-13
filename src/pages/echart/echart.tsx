@@ -20,7 +20,6 @@ class Echart extends React.Component {
   refBarChart = (node) => (this.barChart = node);
 
   componentDidMount() {
-
     const _itemsConf: IChartDimension<IChartItemInfo> = {
       a: {label: 'value1', color: '#EF476F', selected: false},
       b: {label: 'value2', color: '#1C2541', selected: true},

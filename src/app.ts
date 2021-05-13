@@ -1,11 +1,22 @@
 import { Component } from 'react'
+import Taro from '@tarojs/taro'
+import { getLoginInfo } from './api';
 import './app.scss'
-// eslint-disable-next-line import/first
-// import 'taro-ui/dist/style/index.scss'
 
 class App extends Component {
 
-  componentDidMount () {}
+  async componentDidMount () {
+
+    const _accessToken = Taro.getStorageSync('accessToken');
+    const _loginInfoRes = await getLoginInfo({accessToken: _accessToken});
+    if(!_loginInfoRes.data.length) {
+      Taro.navigateTo({
+        url: '/pages/login/login'
+      })
+    } else {
+      Taro.setStorageSync('userInfo', _loginInfoRes.data[0]);
+    }
+  }
 
   componentDidShow () {}
 

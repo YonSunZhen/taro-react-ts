@@ -73,6 +73,7 @@ export class ChartHelp<T> {
   genPieConf(params?: IChartParams<T>) {
     const _otherConf: EChartOption = {};
     const _commonConf = this._genCommonConf();
+    _otherConf.color = this._formattedData.itemsArr.map(m => m.color as string);
     _otherConf.series = this._genPieSeries(this._dataset);
     _otherConf.legend = this._genLegend({top: 20});
     const conf = Object.assign({}, _commonConf, _otherConf);

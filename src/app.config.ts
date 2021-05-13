@@ -1,8 +1,8 @@
 export default {
   pages: [
-    'pages/echart/echart',
-    'pages/login/login',
     'pages/home/home',
+    'pages/login/login',
+    'pages/echart/echart',
 
   ],
   window: {

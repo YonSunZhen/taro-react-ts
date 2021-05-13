@@ -1,6 +1,7 @@
 import { View, Text } from '@tarojs/components'
 import { AtTabs, AtTabsPane } from 'taro-ui'
 import { Component } from 'react';
+import Taro from '@tarojs/taro'
 import Header from './header';
 import { Me, Pride, Project, Team } from './main';
 import './home.scss'
@@ -21,6 +22,10 @@ export default class Home extends Component<{}, HomeState> {
   // react class生命周期
   componentWillUnmount () { }
 
+  async onLoad() {
+
+  }
+
   // taro生命周期 对应原生onShow
   componentDidShow () {
   }
@@ -35,7 +40,7 @@ export default class Home extends Component<{}, HomeState> {
   }
 
   render () {
-    const tabList = [{ title: 'Me' }, { title: 'My Team' }, { title: 'My Projects' }, { title: 'My Prides'}]
+    const tabList = [{ title: 'Me' }, { title: 'Team' }, { title: 'Projects' }, { title: 'Prides'}]
     return (
       <View>
         <Header></Header>
